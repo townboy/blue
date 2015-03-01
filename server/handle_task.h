@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
+#include <mysql/mysql.h>
 #include <time.h>
 #include <set>
 #include "log.h"
@@ -25,7 +26,7 @@ public:
 	}
 
 	int handle(int t_connfd, std::set<int> *online_player, pthread_mutex_t *);
-//	int handle_get_upload_id();
+	int handle_login();
 //	int handle_upload_file(); 
 
 private:

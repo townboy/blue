@@ -5,24 +5,15 @@
 namespace server {
 int HandleTask::handle(int t_connfd, std::set<int> *online_player, pthread_mutex_t * mutex) {
 	connfd = t_connfd;	
-	int len;
-	std::stringstream  ss;
 	
+	int len;
 	pthread_mutex_lock(mutex);
-	int online_num = online_player->size() + 1;
-	ss << online_num;
-	std::string ts;
-	ss >> ts;
-	strcpy(buff, ts.c_str());
-	len = strlen(buff);
-	write(connfd, &len, 4);
-	write(connfd, buff, len);
 	online_player->insert(connfd);
 	pthread_mutex_unlock(mutex);
 
 	while(1) {
-		int n = read(connfd,&len,4);
-		if(n == 0) {
+		read(connfd,&len,4);
+		/*if(n == 0) {
 			pthread_mutex_lock(mutex);
 			online_player->erase(connfd);
 			pthread_mutex_unlock(mutex);
@@ -30,37 +21,57 @@ int HandleTask::handle(int t_connfd, std::set<int> *online_player, pthread_mutex
 			LOG_DEBUG << "client exit !" << std::endl;
 			return 0;
 		}
-		//LOG_DEBUG << n << std::endl;
+		//LOG_DEBUG << n << std::endl;*/
 		read(connfd,buff,len);
 		buff[len] = '\0';
-		
-		std::set<int>::iterator it;
-		for (it = online_player->begin(); it!=online_player->end(); it++) {
-			int fd = *it;
-			if(fd == connfd) 
-				continue;
-			write(fd, &len, 4);
-			write(fd, buff, len);
+
+		if (!reader.parse(buff, value)) {
+			LOG_ERROR << "parse json error !" << std::endl;
+			return -1;
 		}
-		/*
-		if((*fd_count) >= 2) {
-			if (connfd == 4) {
-				write(5, &len, 4);
-				write(5, buff, len);
-			} else {
-				write(4, &len, 4);
-				write(4, buff, len);
-			}
-		}*/
-/*
+
+		std::string m_type = value["type"].asString();
+		LOG_DEBUG << m_type << std::endl;
+
+		if (m_type == "login") {
+			handle_login();
+		}
 		
-		LOG_DEBUG << len << " " << buff << std::endl;
-		//strcpy(buff, "huangshuai");
-		//len = strlen(buff);
-		write(connfd, &len, 4);
-		write(connfd, buff, len);*/
+		
 	}
 	return 0;
+}
+
+int HandleTask::handle_login() {
+	std::string user_name = value["userName"].asString();
+
+	MYSQL *mysql_conn;
+	MYSQL_RES *res;
+	MYSQL_ROW row;
+	mysql_conn = mysql_init(NULL);
+	if (!mysql_real_connect(mysql_conn, "localhost", "root", "123456", "game_database", 0, NULL, 0)) {
+		LOG_ERROR << "%s" <<  mysql_error(mysql_conn) << std::endl;
+		return -1;
+	}
+
+	std::string query_string  = "select * from user where userName = " + user_name;
+	if (mysql_query(mysql_conn, query_string.c_str())) {	
+		LOG_ERROR << "%s" <<  mysql_error(mysql_conn) << std::endl;
+		return -1;
+	}
+
+	res = mysql_use_result(mysql_conn);
+	
+	if (res->row_count != 0) {
+		row = mysql_fetch_row(res);
+		printf("%s\n",row[0]);
+	} else {
+		
+	}
+
+	mysql_free_result(res);
+	mysql_close(mysql_conn);
+	printf("finish!\n");
 }
 /*
 int HandleTask::handle(int t_connfd) {

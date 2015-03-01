@@ -1,5 +1,5 @@
 server_main : server_main.o master.o worker.o server.o handle_task.o
-	g++ -o server server_main.o master.o worker.o server.o handle_task.o ./common/jsoncpp/libjson.a -lpthread 
+	g++ -o server server_main.o master.o worker.o server.o handle_task.o ./common/jsoncpp/libjson.a -lpthread -lmysqlclient
 
 server_main.o : server_main.cpp
 	g++ -c server_main.cpp -o server_main.o -I ./common
