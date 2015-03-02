@@ -17,29 +17,37 @@ int main(int argc, char ** argv) {
 	}
 
 	if((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-		printf("1\n");
+		printf("create socket error!\n");
 		exit(0);
 	}
+
 	memset(&server_address, 0, sizeof(server_address));
 	server_address.sin_family = AF_INET;
 	server_address.sin_port = htons(8897);
 	if(inet_pton(AF_INET, argv[1], &server_address.sin_addr) <= 0) {
-		printf("2\n");
+		printf("inet_pton error!\n");
 		exit(0);
 	}
 
 	if(connect(socket_fd, (sockaddr *)&server_address, sizeof(server_address)) == -1) {
-		printf("3\n");
+		printf("connect error!\n");
 		exit(0);
 	}
-	char buff[1000] = "huangshuai";
-	int len;
-	if((len = write(socket_fd, buff, strlen(buff))) == -1) {
-		printf("4\n");
+	char buff[1000] = "{\"type\":\"login\" , \"userName\":\"huangshuai\"}";
+	int len = strlen(buff);
+
+	if(write(socket_fd, &len, 4) == -1) {
+		printf("write len error!\n");
 		exit(0);
 	}
-	printf("len: %d\n",len);
-//	sleep(1000);
+	if(write(socket_fd, buff, strlen(buff)) == -1) {
+		printf("write buff error!\n");
+		exit(0);
+	}
+
+	read(socket_fd, &len, 4);
+	read(socket_fd, buff, len);
+	printf("%s\n", buff);
 	close(socket_fd);
 	return 0;
 }
