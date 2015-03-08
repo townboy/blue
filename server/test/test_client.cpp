@@ -33,6 +33,8 @@ int main(int argc, char ** argv) {
 		printf("connect error!\n");
 		exit(0);
 	}
+/*
+	
 	char buff[1000] = "{\"type\":\"login\" , \"userName\":\"huangshuai\"}";
 	int len = strlen(buff);
 
@@ -48,6 +50,29 @@ int main(int argc, char ** argv) {
 	read(socket_fd, &len, 4);
 	read(socket_fd, buff, len);
 	printf("%s\n", buff);
+*/
+	
+	char buff[1000] = "{\"type\":\"start_game\"}";
+	int len = strlen(buff);
+
+	if(write(socket_fd, &len, 4) == -1) {
+		printf("write len error!\n");
+		exit(0);
+	}
+	if(write(socket_fd, buff, strlen(buff)) == -1) {
+		printf("write buff error!\n");
+		exit(0);
+	}
+
+	read(socket_fd, &len, 4);
+	read(socket_fd, buff, len);
+	printf("%s\n", buff);
+
+
+	read(socket_fd, &len, 4);
+	read(socket_fd, buff, len);
+	printf("%s\n", buff);
+	while(1);
 	close(socket_fd);
 	return 0;
 }

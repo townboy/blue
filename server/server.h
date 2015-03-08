@@ -56,8 +56,6 @@ public:
 				printf("Online number: %d!\n", num);
 			}
 		}
-		//m_master->start_master();
-		//m_worker->start_worker();
 		return 0;
 	}
 

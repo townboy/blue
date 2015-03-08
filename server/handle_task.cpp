@@ -4,7 +4,7 @@
 #include <cstdlib>
 
 namespace server {
-int HandleTask::handle(int t_connfd, std::set<int> *online_player, pthread_mutex_t * mutex) {
+int HandleTask::handle(int t_connfd, std::set<int> *online_player, pthread_mutex_t * mutex, std::queue<int> *wait_queue, pthread_mutex_t *wait_queue_mutex) {
 	connfd = t_connfd;	
 	
 	int len;
@@ -35,10 +35,20 @@ int HandleTask::handle(int t_connfd, std::set<int> *online_player, pthread_mutex
 
 		if (m_type == "login") {
 			handle_login();
+		} else if (m_type == "start_game") {
+			handle_start_game(connfd, wait_queue, wait_queue_mutex);
+			return 0;
 		}
 		
 		
 	}
+	return 0;
+}
+
+int HandleTask::handle_start_game(int connfd, std::queue<int> *wait_queue, pthread_mutex_t *wait_queue_mutex) {
+	pthread_mutex_lock(wait_queue_mutex);
+	wait_queue->push(connfd);
+	pthread_mutex_unlock(wait_queue_mutex);
 	return 0;
 }
 
@@ -71,7 +81,7 @@ int HandleTask::handle_login() {
 		response["message"] = "a exist user!";
 		
 		content["userName"] = user_name;
-		content["potency"] = row[1];
+		content["potency"] = atoi(row[1]);
 
 		std::string play_id[4];
 		play_id[0] = row[2];
@@ -170,97 +180,5 @@ int HandleTask::handle_login() {
 	LOG_DEBUG << buff << std::endl;
 	LOG_DEBUG << "finish!" << std::endl;
 }
-/*
-int HandleTask::handle(int t_connfd) {
-	
-	connfd = t_connfd;
-	read(connfd, buff, 5000);
-	//printf("handle task %d %s\n", strlen(buff), buff);
-	if (!reader.parse(buff, value)) {
-		LOG_ERROR << "parse json error !" << std::endl;
-		return -1;
-	}
-	std::string m_type = value["type"].asString();
-	//LOG_DEBUG << m_type << std::endl;
-	
-	if (m_type == "get_upload_id") {
-		handle_get_upload_id();
-	} else if (m_type == "upload_file"){
-		std::cout << buff << std::endl;
-		handle_upload_file();
-	}
 
-	return 0;
-}
-
-int HandleTask::handle_get_upload_id() {
-	Json::Value content;
-	content["status"] = "ok";
-	Json::Value data;
-		
-	long long tmp_id = (long long)time(NULL);
-	std::stringstream ss;
-	ss << tmp_id;
-		
-	std::string upload_id ;
-	ss >> upload_id;
-
-	data["upload_id"] = Json::Value(upload_id);
-	content["data"] = data;
-	std::string tmp = content.toStyledString();
-	strncpy(buff, tmp.c_str(), 5000);
-	if (write(connfd, buff, strlen(buff)) == -1) {
-		LOG_DEBUG <<  "write error !" << std::endl;
-		return -1;
-	}
-
-	return 0;
-}
-
-int HandleTask::handle_upload_file() {
-
-	std::string m_data = value["data"].asString();
-	std::string m_file = value["file_name"].asString();
-	m_file = m_file;
-	int fp = open(m_file.c_str(), O_WRONLY | O_CREAT);
-	if (fp < 0) {
-		LOG_ERROR << "open file error" << std::endl;
-		return -1;
-	}
-	while(1) {
-		std::string m_data = value["data"].asString();
-		std::string m_file = value["file_name"].asString();
-		m_file = "data//" + m_file;
-		
-		LOG_DEBUG << "data length " << m_data.length() << std::endl;
-		write(fp, m_data.c_str(), m_data.length());
-	
-		Json::Value content;
-		content["status"] = "ok";
-		std::string tmp = content.toStyledString();
-		strncpy(buff, tmp.c_str(), 5000);
-		if (write(connfd, buff, strlen(buff)) == -1) {
-			LOG_DEBUG <<  "write error !" << std::endl;
-			return -1;
-		}
-
-
-		int n = read(connfd, buff, 5000);
-		if (n == -1) {
-			LOG_DEBUG << "read error !" << std::endl;
-			return -1;
-		} else if(n == 0) {
-			close(fp);
-			break;
-		} else {
-			if (!reader.parse(buff, value)) {
-				LOG_ERROR << "parse json error !" << std::endl;
-				return -1;
-			}
-		}
-	}
-	return 0;
-}
-
-*/
 }
